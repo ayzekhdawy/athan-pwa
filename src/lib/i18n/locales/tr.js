@@ -1,4 +1,4 @@
-// Turkish — prayer names follow the Diyanet prayer calendar (İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı)
+// Turkish — prayer names use the common Turkish terms (İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı)
 export default {
   meta: {
     dateLocale: 'tr-TR',

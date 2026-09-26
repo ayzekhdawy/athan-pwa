@@ -61,7 +61,7 @@ Yani sunucu bir cihaza nasıl bildirim göndereceğini bilir, ama o kişinin ner
 - Seçilen şehre göre kıble yönü (isteğe bağlı pusula izniyle)
 - Çevrimdışı destekli, ana ekrana eklenebilir PWA
 - Türkçe ve İngilizce arayüz, 24 saat biçimi ve Pazartesi ile başlayan takvim
-- Diyanet İşleri Başkanlığı dahil 12 hesaplama yöntemi ve özel açı ayarı
+- Varsayılan olarak Müslüman Dünya Birliği yöntemi; toplam 12 hesaplama yöntemi ve özel açı ayarı
 - Şunlar için anonim hatırlatmalar:
   - beş vakit namaz
   - güneşin doğuşu
@@ -73,7 +73,7 @@ Yani sunucu bir cihaza nasıl bildirim göndereceğini bilir, ama o kişinin ner
 
 Uygulama ilk açılışta cihaz dilini izler; dil, Ayarlar'ın en üstündeki **Dil** bölümünden istediğiniz zaman değiştirilebilir. Seçim cihazda saklanır ve bildirimler de seçilen dilde gelir.
 
-Namaz vakti adları Diyanet takvimindeki kullanımı izler: İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı.
+Namaz vakti adları Türkçede yaygın olarak kullanılan adlardır: İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı.
 
 Çeviriler `src/lib/i18n/locales/` klasöründedir. Yeni bir dil eklemek için `en.js` dosyasını kopyalayıp değerleri çevirin ve `src/lib/i18n/translate.js` içinde kaydedin; `tests/i18n.test.js` tüm anahtarların eksiksiz olduğunu denetler.
 
