@@ -45,6 +45,7 @@ Bu deponun kalbinde bu gizlilik modeli yatıyor.
 - Namaz vakitleri cihazda hesaplanır
 - Kıble GPS'ten değil, seçilen şehirden hesaplanır
 - Tercihler cihazın yerel depolamasında tutulur
+- Günün ayeti `api.alquran.cloud` adresinden yalnızca ayet numarasıyla istenir ve cihazda saklanır
 - Bildirim takvimi senkronizasyondan önce cihazda oluşturulur
 
 ### Bildirim sunucusunun sakladıkları
@@ -60,6 +61,7 @@ Yani sunucu bir cihaza nasıl bildirim göndereceğini bilir, ama o kişinin ner
 - Sıradaki vakte geri sayım
 - Seçilen şehre göre kıble yönü (isteğe bağlı pusula izniyle)
 - Çevrimdışı destekli, ana ekrana eklenebilir PWA
+- Vakitlerin altında kısa bir günün ayeti (Arapçası ve uygulama dilinde meali; dokununca başka bir ayet gelir)
 - Türkçe ve İngilizce arayüz, 24 saat biçimi ve Pazartesi ile başlayan takvim
 - Varsayılan olarak Müslüman Dünya Birliği yöntemi; toplam 12 hesaplama yöntemi ve özel açı ayarı
 - Şunlar için anonim hatırlatmalar:

@@ -4,7 +4,9 @@ export default {
     dateLocale: 'tr-TR',
     hour12: false,
     weekStartsOn: 1,
-    weekdayLabels: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct']
+    weekdayLabels: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+    // Süleyman Ateş — close to the Arabic while reading naturally in modern Turkish
+    quranEdition: 'tr.ates'
   },
 
   prayers: {
@@ -170,6 +172,20 @@ export default {
     cairo: { name: 'Kahire', country: 'Mısır' },
     dubai: { name: 'Dubai', country: 'BAE' },
     london: { name: 'Londra', country: 'Birleşik Krallık' }
+  },
+
+  verse: {
+    next: 'Başka bir ayet göster',
+    surahs: {
+      51: 'Zâriyât',
+      55: 'Rahmân',
+      73: 'Müzzemmil',
+      89: 'Fecr',
+      93: 'Duhâ',
+      94: 'İnşirah',
+      108: 'Kevser',
+      112: 'İhlâs'
+    }
   },
 
   citySelector: {

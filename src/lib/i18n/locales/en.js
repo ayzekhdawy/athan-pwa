@@ -5,7 +5,9 @@ export default {
     // 0 = Sunday, 1 = Monday
     weekStartsOn: 0,
     // Always listed Sunday first; the calendar rotates them using weekStartsOn
-    weekdayLabels: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    weekdayLabels: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    // alquran.cloud translation edition for the verse of the day
+    quranEdition: 'en.sahih'
   },
 
   prayers: {
@@ -172,6 +174,20 @@ export default {
     cairo: { name: 'Cairo', country: 'Egypt' },
     dubai: { name: 'Dubai', country: 'UAE' },
     london: { name: 'London', country: 'UK' }
+  },
+
+  verse: {
+    next: 'Show another verse',
+    surahs: {
+      51: 'Adh-Dhariyat',
+      55: 'Ar-Rahman',
+      73: 'Al-Muzzammil',
+      89: 'Al-Fajr',
+      93: 'Ad-Duha',
+      94: 'Ash-Sharh',
+      108: 'Al-Kawthar',
+      112: 'Al-Ikhlas'
+    }
   },
 
   citySelector: {

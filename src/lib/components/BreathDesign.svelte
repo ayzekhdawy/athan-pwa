@@ -22,6 +22,7 @@
   } from '$lib/stores/prayer.js';
   import { currentTheme } from '$lib/stores/theme.js';
   import { t, localeMeta } from '$lib/i18n/index.js';
+  import { verseReferences, getDailyVerseIndex, fetchVerse } from '$lib/stores/verses.js';
   import CitySelector from './CitySelector.svelte';
   import Settings from './Settings.svelte';
 
@@ -503,6 +504,24 @@
   };
 
   $: prayerName = (prayer) => $t(`prayers.${prayer || 'isha'}`);
+
+  // Verse of the day (tap for the next one), translated into the active language
+  let verseIndex = getDailyVerseIndex();
+  let verse = null;
+  let verseRequest = 0;
+
+  async function loadVerse(index, edition) {
+    const request = ++verseRequest;
+    const result = await fetchVerse(verseReferences[index], edition);
+    if (request === verseRequest && result) verse = result;
+  }
+
+  function showNextVerse() {
+    verseIndex = (verseIndex + 1) % verseReferences.length;
+  }
+
+  $: if (mounted) loadVerse(verseIndex, $localeMeta.quranEdition);
+  $: verseSurahName = verse ? $t(`verse.surahs.${verse.surah}`, null, '') : '';
 
   // Keeps multi-word clock labels on a single line
   function noWrap(text) {
@@ -1439,6 +1458,22 @@
             </div>
           {/key}
         </div>
+
+        {#if verse}
+          {#key verse.reference}
+            <button
+              class="verse"
+              type="button"
+              title={$t('verse.next')}
+              on:click|stopPropagation={showNextVerse}
+              in:fade={{ duration: 500 }}
+            >
+              <span class="verse-arabic" lang="ar" dir="rtl">{verse.arabic}</span>
+              <span class="verse-translation">{verse.translation}</span>
+              <span class="verse-reference">{verseSurahName} {verse.surah}:{verse.ayah}</span>
+            </button>
+          {/key}
+        {/if}
       </div>
     {/if}
 
@@ -2162,6 +2197,55 @@
     font-weight: 400;
   }
 
+  /* Verse of the day */
+  .verse {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+    max-width: min(320px, 85vw);
+    /* Sits in the spare space the prayer list stage reserves below its last row */
+    margin: -2.5rem auto 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .verse-arabic,
+  .verse-translation {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .verse-arabic {
+    font-family: 'Amiri', serif;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: rgba(var(--theme-accent-rgb), 0.7);
+  }
+
+  .verse-translation {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    color: rgba(var(--theme-text-rgb), 0.5);
+  }
+
+  .verse-reference {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(var(--theme-text-rgb), 0.28);
+  }
+
   /* Dates row at bottom */
   .dates-row {
     position: absolute;
@@ -2700,6 +2784,13 @@
   }
 
   /* ===== RESPONSIVE ===== */
+  /* The verse only appears when the screen has room below the prayer list */
+  @media (max-height: 839px) {
+    .verse {
+      display: none;
+    }
+  }
+
   @media (max-width: 380px) {
     .current-arabic {
       font-size: 3.5rem;

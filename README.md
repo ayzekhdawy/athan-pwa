@@ -47,6 +47,7 @@ That privacy model is the heart of this repo.
 - Prayer times are calculated on the device
 - Qibla is derived from the selected city, not GPS
 - User preferences live in local storage on the device
+- The verse of the day is requested from `api.alquran.cloud` by verse number only and cached on the device
 - Notification schedules are generated on the client before sync
 
 ### What the push backend stores
@@ -101,6 +102,7 @@ That means the backend knows how to notify a device, but not where that person l
 - Countdown to the next prayer
 - Qibla direction from the selected city with optional compass orientation permission
 - Installable PWA with offline support
+- A short verse of the day under the prayer times (Arabic with a translation in the app language; tap for another)
 - Anonymous push reminders for:
   - the five daily prayers
   - sunrise
