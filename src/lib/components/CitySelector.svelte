@@ -3,15 +3,16 @@
   import { onMount } from 'svelte';
   import { fade, fly, scale } from 'svelte/transition';
   import { cubicOut, backOut } from 'svelte/easing';
+  import { locale, t } from '$lib/i18n/index.js';
 
   // Popular cities shown when no search query
   const popularCities = [
-    { name: 'Mecca', country: 'Saudi Arabia', lat: 21.4225, lng: 39.8262 },
-    { name: 'Medina', country: 'Saudi Arabia', lat: 24.5247, lng: 39.5692 },
-    { name: 'Istanbul', country: 'Turkey', lat: 41.0082, lng: 28.9784 },
-    { name: 'Cairo', country: 'Egypt', lat: 30.0444, lng: 31.2357 },
-    { name: 'Dubai', country: 'UAE', lat: 25.2048, lng: 55.2708 },
-    { name: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
+    { id: 'mecca', name: 'Mecca', country: 'Saudi Arabia', lat: 21.4225, lng: 39.8262 },
+    { id: 'medina', name: 'Medina', country: 'Saudi Arabia', lat: 24.5247, lng: 39.5692 },
+    { id: 'istanbul', name: 'Istanbul', country: 'Turkey', lat: 41.0082, lng: 28.9784 },
+    { id: 'cairo', name: 'Cairo', country: 'Egypt', lat: 30.0444, lng: 31.2357 },
+    { id: 'dubai', name: 'Dubai', country: 'UAE', lat: 25.2048, lng: 55.2708 },
+    { id: 'london', name: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
   ];
 
   let isOpen = false;
@@ -20,6 +21,10 @@
   let searchResults = [];
   let isSearching = false;
   let searchTimeout;
+
+  // Popular cities carry an id so their names follow the app language
+  $: cityName = (city) => (city.id ? $t(`cities.${city.id}.name`, null, city.name) : city.name);
+  $: cityCountry = (city) => (city.id ? $t(`cities.${city.id}.country`, null, city.country) : city.country);
 
   // Debounced search using Nominatim API
   async function searchCities(query) {
@@ -34,11 +39,11 @@
       const [response1, response2] = await Promise.all([
         fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
+          { headers: { 'Accept-Language': $locale } }
         ),
         fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' city')}&format=json&limit=10&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
+          { headers: { 'Accept-Language': $locale } }
         )
       ]);
 
@@ -134,7 +139,9 @@
       const saved = localStorage.getItem('azan-city');
       if (saved) {
         const city = JSON.parse(saved);
-        selectedCity = city;
+        // Cities saved before popular cities had ids still get translated names
+        const popular = !city.id && popularCities.find((c) => c.lat === city.lat && c.lng === city.lng);
+        selectedCity = popular ? { ...city, id: popular.id } : city;
 
         let timezone = city.timezone;
         if (!timezone) {
@@ -162,7 +169,7 @@
     <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
     <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
-  <span>{selectedCity.name}</span>
+  <span>{cityName(selectedCity)}</span>
 </button>
 
 {#if isOpen}
@@ -171,7 +178,7 @@
     class="backdrop"
     on:click|stopPropagation={close}
     type="button"
-    aria-label="Close"
+    aria-label={$t('citySelector.close')}
     transition:fade={{ duration: 200 }}
   ></button>
 
@@ -188,7 +195,7 @@
         type="text"
         bind:value={searchQuery}
         on:input={handleSearchInput}
-        placeholder="Search city..."
+        placeholder={$t('citySelector.searchPlaceholder')}
         class="search-input"
         autocomplete="off"
         autocorrect="off"
@@ -209,19 +216,19 @@
           type="button"
           in:scale={{ duration: 300, delay: 120 + i * 40, start: 0.8, easing: backOut }}
         >
-          <span class="chip-name">{city.name}</span>
-          <span class="chip-country">{city.country}</span>
+          <span class="chip-name">{cityName(city)}</span>
+          <span class="chip-country">{cityCountry(city)}</span>
         </button>
       {/each}
 
       {#if searchQuery.length >= 2 && displayCities.length === 0 && !isSearching}
-        <div class="no-results" in:fade={{ duration: 200 }}>No cities found</div>
+        <div class="no-results" in:fade={{ duration: 200 }}>{$t('citySelector.noResults')}</div>
       {/if}
     </div>
 
     <!-- Close hint -->
     <div class="close-hint" in:fade={{ duration: 300, delay: 350 }}>
-      tap anywhere to close
+      {$t('citySelector.tapToClose')}
     </div>
   </div>
 {/if}

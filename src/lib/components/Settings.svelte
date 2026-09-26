@@ -9,6 +9,7 @@
     toggleNotificationType
   } from '$lib/stores/notifications.js';
   import { darkThemes, lightThemes, currentThemeId, setTheme, themeMode, setThemeMode } from '$lib/stores/theme.js';
+  import { locale, supportedLocales, t } from '$lib/i18n/index.js';
   import { fade } from 'svelte/transition';
   import { onMount } from 'svelte';
 
@@ -39,7 +40,7 @@
     { id: 'Qatar', name: 'Qatar Calendar House', fajr: 18, isha: '90min' },
     { id: 'NorthAmerica', name: 'Islamic Society of North America', fajr: 15, isha: 15 },
     { id: 'MoonsightingCommittee', name: 'Moonsighting Committee Worldwide', fajr: 18, isha: 18 },
-    { id: 'Turkey', name: 'Diyanet Isleri Baskanligi, Turkey', fajr: 18, isha: 17 },
+    { id: 'Turkey', name: 'Diyanet İşleri Başkanlığı, Türkiye', fajr: 18, isha: 17 },
     { id: 'Tehran', name: 'Institute of Geophysics, Tehran', fajr: 17.7, isha: 14 },
     { id: 'Singapore', name: 'Islamic Religious Council of Singapore', fajr: 20, isha: 18 },
     { id: 'Custom', name: 'Custom', fajr: 18, isha: 17 },
@@ -59,9 +60,15 @@
   $: specialNotifications = notificationDefinitions.filter((definition) => specialNotificationIds.includes(definition.id));
   $: notificationTiles = [...primaryNotifications, ...specialNotifications];
 
-  function getNotificationDescription(id) {
-    return specialNotificationIds.includes(id) ? 'Special reminder' : 'Prayer alert';
-  }
+  $: getNotificationDescription = (id) => (
+    specialNotificationIds.includes(id) ? $t('settings.specialReminder') : $t('settings.prayerAlert')
+  );
+
+  $: formatIshaAngle = (isha) => (
+    typeof isha === 'string'
+      ? $t('settings.ishaMinutes', { minutes: parseInt(isha, 10) })
+      : `${isha}°`
+  );
 
   function emitQiblaPermission(status) {
     if (typeof window === 'undefined') return;
@@ -137,11 +144,11 @@
           clockIndicators.toggle('qibla');
           emitQiblaPermission('granted');
         } else {
-          qiblaPermissionNote = 'Compass permission was denied. Enable it in Safari settings to use Qibla.';
+          qiblaPermissionNote = 'settings.compassDeniedSafari';
           emitQiblaPermission('denied');
         }
       } catch (error) {
-        qiblaPermissionNote = 'Could not request compass permission right now.';
+        qiblaPermissionNote = 'settings.compassRequestFailed';
         emitQiblaPermission('denied');
       }
       return;
@@ -209,7 +216,7 @@
   class:open={isOpen}
   on:click|stopPropagation={() => isOpen ? close() : open()}
   type="button"
-  aria-label={isOpen ? 'Close settings' : 'Settings'}
+  aria-label={isOpen ? $t('settings.close') : $t('settings.open')}
 >
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
     <!-- Gear icon -->
@@ -228,7 +235,7 @@
     class="backdrop"
     on:click|stopPropagation={close}
     type="button"
-    aria-label="Close"
+    aria-label={$t('settings.closeBackdrop')}
     transition:fade={{ duration: 200 }}
   ></button>
 
@@ -240,12 +247,28 @@
     <div class="settings-inner" on:click|stopPropagation>
       <!-- Header -->
       <div class="settings-header">
-        <span class="settings-title">Settings</span>
+        <span class="settings-title">{$t('settings.title')}</span>
+      </div>
+
+      <!-- Language -->
+      <div class="section">
+        <span class="section-label">{$t('settings.language')}</span>
+        <div class="size-options">
+          {#each supportedLocales as option}
+            <button
+              class="size-option"
+              class:active={$locale === option.id}
+              on:click={() => locale.set(option.id)}
+              type="button"
+              lang={option.id}
+            >{option.label}</button>
+          {/each}
+        </div>
       </div>
 
       <!-- Theme Selector -->
       <div class="section">
-      <span class="section-label">Theme</span>
+      <span class="section-label">{$t('settings.theme')}</span>
 
       <!-- Dark/Light/Texture Mode Switcher -->
       <div class="mode-switcher">
@@ -258,7 +281,7 @@
           <svg viewBox="0 0 24 24" fill="currentColor" class="mode-icon">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>
           </svg>
-          <span>Dark</span>
+          <span>{$t('settings.dark')}</span>
         </button>
         <button
           class="mode-tab"
@@ -270,8 +293,8 @@
             <circle cx="12" cy="12" r="4"/>
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
           </svg>
-          <span>Light</span>
-          <span class="new-badge">NEW</span>
+          <span>{$t('settings.light')}</span>
+          <span class="new-badge">{$t('settings.newBadge')}</span>
         </button>
       </div>
 
@@ -286,13 +309,13 @@
             style="--preview-bg: {theme.bg}; --preview-accent: {theme.accent}; --preview-accent-bright: {theme.accentBright};"
           >
             {#if isNewDarkTheme}
-              <span class="new-badge theme-badge">NEW</span>
+              <span class="new-badge theme-badge">{$t('settings.newBadge')}</span>
             {/if}
             <div class="theme-preview">
               <div class="preview-glow"></div>
               <div class="preview-dot"></div>
             </div>
-            <span class="theme-name">{theme.name}</span>
+            <span class="theme-name">{$t(`themes.${$themeMode}.${theme.id}`, null, theme.name)}</span>
           </button>
         {/each}
       </div>
@@ -300,21 +323,21 @@
 
     <!-- Notifications -->
     <div class="section">
-      <span class="section-label">Notifications</span>
+      <span class="section-label">{$t('settings.notifications')}</span>
       <button
         class="notification-master indicator-toggle"
         class:active={$notificationPreferences.enabled}
         on:click={handleNotificationToggle}
         type="button"
       >
-        <span class="indicator-name">{$notificationPreferences.enabled ? 'Notifications Enabled' : 'Enable Notifications'}</span>
+        <span class="indicator-name">{$notificationPreferences.enabled ? $t('settings.notificationsEnabled') : $t('settings.enableNotifications')}</span>
         <span class="indicator-desc">
           {#if $notificationState.syncing}
-            Updating reminders...
+            {$t('settings.updatingReminders')}
           {:else if $notificationPreferences.enabled}
-            Prayer reminders update automatically
+            {$t('settings.remindersAutoUpdate')}
           {:else}
-            Get gentle reminders for each prayer
+            {$t('settings.gentleReminders')}
           {/if}
         </span>
       </button>
@@ -327,7 +350,7 @@
             on:click={() => handleNotificationTypeToggle(definition.id)}
             type="button"
           >
-            <span class="indicator-name">{definition.label}</span>
+            <span class="indicator-name">{$t(`notifications.${definition.id}`, null, definition.label)}</span>
             <span class="indicator-desc">{getNotificationDescription(definition.id)}</span>
           </button>
         {/each}
@@ -336,7 +359,7 @@
 
     <!-- Clock Indicators -->
     <div class="section">
-      <span class="section-label">Clock Indicators</span>
+      <span class="section-label">{$t('settings.clockIndicators')}</span>
       <div class="indicators-grid">
         <button
           class="indicator-toggle"
@@ -344,7 +367,7 @@
           on:click={() => clockIndicators.toggle('sunrise')}
           type="button"
         >
-          <span class="indicator-name">Sunrise</span>
+          <span class="indicator-name">{$t('settings.sunrise')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -352,8 +375,8 @@
           on:click={toggleQiblaIndicator}
           type="button"
         >
-          <span class="indicator-name">Qibla</span>
-          <span class="indicator-desc">Compass needle</span>
+          <span class="indicator-name">{$t('settings.qibla')}</span>
+          <span class="indicator-desc">{$t('settings.compassNeedle')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -361,8 +384,8 @@
           on:click={() => clockIndicators.toggle('lastThird')}
           type="button"
         >
-          <span class="indicator-name">Last Third</span>
-          <span class="indicator-desc">Best time for dua</span>
+          <span class="indicator-name">{$t('settings.lastThird')}</span>
+          <span class="indicator-desc">{$t('settings.bestTimeForDua')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -370,8 +393,8 @@
           on:click={() => clockIndicators.toggle('firstThirdEnd')}
           type="button"
         >
-          <span class="indicator-name">1st Third End</span>
-          <span class="indicator-desc">Isha preferred end</span>
+          <span class="indicator-name">{$t('settings.firstThirdEnd')}</span>
+          <span class="indicator-desc">{$t('settings.ishaPreferredEnd')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -379,8 +402,8 @@
           on:click={() => clockIndicators.toggle('fridayDua')}
           type="button"
         >
-          <span class="indicator-name">Jumu'ah Dua</span>
-          <span class="indicator-desc">Asr to Maghrib</span>
+          <span class="indicator-name">{$t('settings.fridayDua')}</span>
+          <span class="indicator-desc">{$t('settings.asrToMaghrib')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -388,8 +411,8 @@
           on:click={() => clockIndicators.toggle('duha')}
           type="button"
         >
-          <span class="indicator-name">Duha</span>
-          <span class="indicator-desc">Morning prayer</span>
+          <span class="indicator-name">{$t('settings.duha')}</span>
+          <span class="indicator-desc">{$t('settings.morningPrayer')}</span>
         </button>
         <button
           class="indicator-toggle"
@@ -397,46 +420,46 @@
           on:click={() => clockIndicators.toggle('qaylula')}
           type="button"
         >
-          <span class="indicator-name">Qaylula</span>
-          <span class="indicator-desc">Mid-day rest</span>
+          <span class="indicator-name">{$t('settings.qaylula')}</span>
+          <span class="indicator-desc">{$t('settings.midDayRest')}</span>
         </button>
       </div>
       {#if $clockIndicators.qibla}
-        <p class="indicator-note">Qibla is based on your selected city—we never track your live location. May be inaccurate within Makkah or while travelling.</p>
+        <p class="indicator-note">{$t('settings.qiblaNote')}</p>
       {/if}
       {#if qiblaPermissionNote}
-        <p class="indicator-note">{qiblaPermissionNote}</p>
+        <p class="indicator-note">{$t(qiblaPermissionNote)}</p>
       {/if}
     </div>
 
     <!-- Label Size -->
     <div class="section">
-      <span class="section-label">Clock Label Size</span>
+      <span class="section-label">{$t('settings.labelSize')}</span>
       <div class="size-options">
         <button
           class="size-option"
           class:active={$labelSize === 'small'}
           on:click={() => labelSize.set('small')}
           type="button"
-        >Small</button>
+        >{$t('settings.small')}</button>
         <button
           class="size-option"
           class:active={$labelSize === 'medium'}
           on:click={() => labelSize.set('medium')}
           type="button"
-        >Medium</button>
+        >{$t('settings.medium')}</button>
         <button
           class="size-option"
           class:active={$labelSize === 'large'}
           on:click={() => labelSize.set('large')}
           type="button"
-        >Large</button>
+        >{$t('settings.large')}</button>
       </div>
     </div>
 
     <!-- Calculation Method -->
     <div class="section">
-      <span class="section-label">Calculation Method</span>
+      <span class="section-label">{$t('settings.calculationMethod')}</span>
       <div class="method-grid">
         {#each methods as method, i}
           <button
@@ -445,11 +468,11 @@
             on:click={() => selectMethod(method)}
             type="button"
           >
-            <span class="method-name">{method.name}</span>
+            <span class="method-name">{$t(`methods.${method.id}`, null, method.name)}</span>
             {#if method.id !== 'Custom'}
-              <span class="method-angles">{method.fajr}° / {typeof method.isha === 'string' ? method.isha : method.isha + '°'}</span>
+              <span class="method-angles">{method.fajr}° / {formatIshaAngle(method.isha)}</span>
             {:else}
-              <span class="method-angles">Your angles</span>
+              <span class="method-angles">{$t('settings.yourAngles')}</span>
             {/if}
           </button>
         {/each}
@@ -461,10 +484,10 @@
       class="section custom-section"
       class:expanded={showCustom || selectedMethod === 'Custom'}
     >
-      <span class="section-label">Custom Angles</span>
+      <span class="section-label">{$t('settings.customAngles')}</span>
       <div class="angles-row">
         <div class="angle-input-group">
-          <label for="fajr-angle">Fajr</label>
+          <label for="fajr-angle">{$t('prayers.fajr')}</label>
           <div class="angle-control">
             <button
               class="angle-btn"
@@ -486,13 +509,13 @@
               type="button"
             >+</button>
           </div>
-          <span class="angle-unit">degrees</span>
+          <span class="angle-unit">{$t('settings.degrees')}</span>
         </div>
 
         <div class="angle-divider"></div>
 
         <div class="angle-input-group">
-          <label for="isha-angle">Isha</label>
+          <label for="isha-angle">{$t('prayers.isha')}</label>
           <div class="angle-control">
             <button
               class="angle-btn"
@@ -514,19 +537,19 @@
               type="button"
             >+</button>
           </div>
-          <span class="angle-unit">degrees</span>
+          <span class="angle-unit">{$t('settings.degrees')}</span>
         </div>
       </div>
-      <p class="angle-hint">Degrees below horizon for twilight calculation</p>
+      <p class="angle-hint">{$t('settings.anglesHint')}</p>
     </div>
 
     <!-- About -->
     <div class="about-row">
       <div class="about-identity">
-        <img src="/images/azanicn.png" alt="Azan" class="about-logo" />
+        <img src="/images/azanicn.png" alt={$t('settings.appName')} class="about-logo" />
         <div class="about-text">
-          <span class="about-name">Azan</span>
-          <span class="about-desc">Beautiful Islamic prayer times</span>
+          <span class="about-name">{$t('settings.appName')}</span>
+          <span class="about-desc">{$t('settings.tagline')}</span>
         </div>
       </div>
       <a
@@ -545,7 +568,7 @@
 
     <!-- Close hint -->
     <div class="close-hint">
-      tap anywhere to close
+      {$t('settings.tapToClose')}
     </div>
   </div>
 {/if}

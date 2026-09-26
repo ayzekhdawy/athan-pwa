@@ -21,6 +21,7 @@
     dateOffset
   } from '$lib/stores/prayer.js';
   import { currentTheme } from '$lib/stores/theme.js';
+  import { t, localeMeta } from '$lib/i18n/index.js';
   import CitySelector from './CitySelector.svelte';
   import Settings from './Settings.svelte';
 
@@ -57,7 +58,12 @@
   let breathPhase = 0;
   let dateSwipeDirection = 1;
   let calendarMonth = new Date();
-  const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // Weekday headers rotated so the calendar starts on the locale's first day of the week
+  $: weekStartsOn = $localeMeta.weekStartsOn || 0;
+  $: weekdayLabels = [
+    ...$localeMeta.weekdayLabels.slice(weekStartsOn),
+    ...$localeMeta.weekdayLabels.slice(0, weekStartsOn)
+  ];
   let calendarTouchStartX = 0;
   let calendarTouchStartY = 0;
   let calendarTouchStartAt = 0;
@@ -473,26 +479,34 @@
 
 
 
-  function formatCountdown(cd) {
+  // Reactive so every label re-renders when the language changes
+  $: formatCountdown = (cd) => {
     const h = String(cd.hours).padStart(2, '0');
     const m = String(cd.minutes).padStart(2, '0');
     const s = String(Math.max(0, cd.seconds)).padStart(2, '0');
-    if (cd.hours > 0) return `${h}h ${m}m`;
-    return `${m}m ${s}s`;
-  }
+    if (cd.hours > 0) return $t('countdown.hoursMinutes', { h, m });
+    return $t('countdown.minutesSeconds', { m, s });
+  };
 
-  function formatTime(date) {
+  $: formatTime = (date) => {
     if (!date) return '--:--';
     const options = {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: $localeMeta.hour12
     };
     // Use city's timezone if available
     if ($location.timezone) {
       options.timeZone = $location.timezone;
     }
-    return date.toLocaleTimeString('en-US', options);
+    return date.toLocaleTimeString($localeMeta.dateLocale, options);
+  };
+
+  $: prayerName = (prayer) => $t(`prayers.${prayer || 'isha'}`);
+
+  // Keeps multi-word clock labels on a single line
+  function noWrap(text) {
+    return text.replace(/ /g, '\u00a0');
   }
 
   function normalizeDate(date) {
@@ -564,10 +578,10 @@
     shiftCalendarMonth(deltaX < 0 ? 1 : -1);
   }
 
-  function getCalendarCells(monthDate) {
+  function getCalendarCells(monthDate, firstDayOfWeek = 0) {
     const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1, 12, 0, 0, 0);
     const start = new Date(startOfMonth);
-    start.setDate(start.getDate() - startOfMonth.getDay());
+    start.setDate(start.getDate() - ((startOfMonth.getDay() - firstDayOfWeek + 7) % 7));
 
     const cells = [];
     for (let i = 0; i < 42; i++) {
@@ -578,12 +592,10 @@
     return cells;
   }
 
-  function getCalendarMonthLabel(date) {
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
-  }
+  $: getCalendarMonthLabel = (date) => date.toLocaleDateString($localeMeta.dateLocale, {
+    month: 'long',
+    year: 'numeric'
+  });
 
   function getHijriDayNumber(date) {
     const day = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
@@ -677,12 +689,14 @@
     }
   }
 
-  function getOffsetLabel(offset) {
-    if (offset === 0) return 'Today';
-    if (offset === 1) return 'Tomorrow';
-    if (offset === -1) return 'Yesterday';
-    return offset > 0 ? `${offset} days ahead` : `${Math.abs(offset)} days back`;
-  }
+  $: getOffsetLabel = (offset) => {
+    if (offset === 0) return $t('date.today');
+    if (offset === 1) return $t('date.tomorrow');
+    if (offset === -1) return $t('date.yesterday');
+    return offset > 0
+      ? $t('date.daysAhead', { count: offset })
+      : $t('date.daysBack', { count: Math.abs(offset) });
+  };
 
   function dateListSlide(node, { direction = 1, duration = 430 } = {}) {
     const distance = node.getBoundingClientRect().width + 64;
@@ -714,19 +728,15 @@
 
   $: selectedCalendarDate = getDateFromOffset($dateOffset);
   $: todayCalendarDate = getDateFromOffset(0);
-  $: calendarCells = getCalendarCells(calendarMonth);
-  $: calendarHijriMonths = getHijriMonthsInGregorianMonth(calendarMonth);
-  $: selectedHijriMonth = getHijriMonthMeta(selectedCalendarDate);
+  $: calendarCells = getCalendarCells(calendarMonth, weekStartsOn);
+  $: calendarHijriMonths = (hijriMonths, getHijriMonthsInGregorianMonth(calendarMonth));
+  $: selectedHijriMonth = (hijriMonths, getHijriMonthMeta(selectedCalendarDate));
   $: activeCalendarHijriMonthKey = calendarHijriMonths.some((month) => month.key === selectedHijriMonth.key)
     ? selectedHijriMonth.key
     : calendarHijriMonths[0]?.key;
 
-  // Get Hijri date
-  const hijriMonths = [
-    'Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani',
-    'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', 'Shaban',
-    'Ramadan', 'Shawwal', 'Dhu al-Qadah', 'Dhu al-Hijjah'
-  ];
+  // Get Hijri date (month names come from the active language)
+  $: hijriMonths = $t('hijriMonths');
 
   function getHijriDate() {
     try {
@@ -743,18 +753,18 @@
       // Extract just the number from year (removes "AH" suffix if present)
       const yearNum = year.replace(/[^\d]/g, '');
 
-      return `${day} ${monthName} ${yearNum} AH`;
+      return $t('date.hijri', { day, month: monthName, year: yearNum });
     } catch {
       return '';
     }
   }
 
-  $: hijriDate = ($currentTime, $prayerTimes.dhuhr, $dateOffset, getHijriDate());
+  $: hijriDate = ($currentTime, $prayerTimes.dhuhr, $dateOffset, $t, hijriMonths, getHijriDate());
 
   // Get Gregorian date
   function getGregorianDate() {
     const date = getDateAnchor();
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString($localeMeta.dateLocale, {
       timeZone: $location.timezone,
       weekday: 'long',
       day: 'numeric',
@@ -762,7 +772,7 @@
     });
   }
 
-  $: gregorianDate = ($currentTime, $prayerTimes.dhuhr, $dateOffset, getGregorianDate());
+  $: gregorianDate = ($currentTime, $prayerTimes.dhuhr, $dateOffset, $localeMeta, getGregorianDate());
 
   // Calculate current position on 24-hour clock (relative to Maghrib)
   $: currentTimeAngle = (() => {
@@ -1105,7 +1115,7 @@
             class:active={isActive}
             style="left: {labelPos.x}%; top: {labelPos.y}%;"
           >
-            <span class="clock-label-name">{prayerNames[prayer]?.en}</span>
+            <span class="clock-label-name">{prayerName(prayer)}</span>
             <span class="clock-label-time">{formatTime($prayerTimes[prayer])}</span>
           </div>
         {/each}
@@ -1117,7 +1127,7 @@
             class:active={isInFirstThird}
             style="left: {firstThirdLabelPos.x}%; top: {firstThirdLabelPos.y}%;"
           >
-            <span class="clock-label-name">1st&nbsp;Third&nbsp;End</span>
+            <span class="clock-label-name">{noWrap($t('clock.firstThirdEnd'))}</span>
             <span class="clock-label-time">{formatTime(firstThirdEnd.time)}</span>
           </div>
         {/if}
@@ -1129,7 +1139,7 @@
             class:active={isInLastThird}
             style="left: {lastThirdLabelPos.x}%; top: {lastThirdLabelPos.y}%;"
           >
-            <span class="clock-label-name">Last&nbsp;Third</span>
+            <span class="clock-label-name">{noWrap($t('clock.lastThird'))}</span>
             <span class="clock-label-time">{formatTime(lastThirdOfNight.startTime)}</span>
           </div>
         {/if}
@@ -1140,11 +1150,11 @@
       <div class="clock-center" class:blurred={overlayOpen}>
         {#key $currentPrayer.current}
           <div class="clock-center-arabic" in:fly={{ y: 8, duration: 500, delay: 150, easing: cubicOut }} out:fly={{ y: -8, duration: 200 }}>{prayerNames[$currentPrayer.current]?.ar || 'العشاء'}</div>
-          <div class="clock-center-english" in:fly={{ y: 6, duration: 500, delay: 200, easing: cubicOut }} out:fly={{ y: -6, duration: 200 }}>{prayerNames[$currentPrayer.current]?.en || 'Isha'}</div>
+          <div class="clock-center-english" in:fly={{ y: 6, duration: 500, delay: 200, easing: cubicOut }} out:fly={{ y: -6, duration: 200 }}>{prayerName($currentPrayer.current)}</div>
         {/key}
         <div class="clock-center-countdown">{formatCountdown($todayCountdown)}</div>
         {#key $todayCurrentPrayer.next}
-          <div class="clock-center-next" in:fly={{ y: 4, duration: 500, delay: 250, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>until {prayerNames[$todayCurrentPrayer.next]?.en}</div>
+          <div class="clock-center-next" in:fly={{ y: 4, duration: 500, delay: 250, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>{$t('clock.until', { prayer: prayerName($todayCurrentPrayer.next) })}</div>
         {/key}
       </div>
 
@@ -1152,26 +1162,26 @@
       {#if (isInDuha && $clockIndicators.duha) || (isInQaylula && $clockIndicators.qaylula) || (isInFridayDua && $clockIndicators.fridayDua) || (isInFirstThird && $clockIndicators.firstThirdEnd) || (isInLastThird && $clockIndicators.lastThird)}
         <div class="clock-indicators" class:blurred={overlayOpen}>
           {#if isInDuha && $clockIndicators.duha}
-            <span class="indicator-active">Duha until {formatTime(duhaTime.endTime)}</span>
+            <span class="indicator-active">{$t('indicators.duhaUntil', { time: formatTime(duhaTime.endTime) })}</span>
           {:else if isInQaylula && $clockIndicators.qaylula}
-            <span class="indicator-active">Qaylula until {formatTime(qaylulaTime.endTime)}</span>
+            <span class="indicator-active">{$t('indicators.qaylulaUntil', { time: formatTime(qaylulaTime.endTime) })}</span>
           {:else if isInFridayDua && $clockIndicators.fridayDua}
-            <span class="indicator-active">Jumu'ah Dua until Maghrib</span>
+            <span class="indicator-active">{$t('indicators.fridayDuaUntilMaghrib')}</span>
           {:else if isInFirstThird && $clockIndicators.firstThirdEnd}
-            <span class="indicator-active">1st Third until {formatTime(firstThirdEnd.time)}</span>
+            <span class="indicator-active">{$t('indicators.firstThirdUntil', { time: formatTime(firstThirdEnd.time) })}</span>
           {:else if isInLastThird && $clockIndicators.lastThird}
-            <span class="indicator-active">Last Third until Fajr</span>
+            <span class="indicator-active">{$t('indicators.lastThirdUntilFajr')}</span>
           {/if}
         </div>
       {/if}
 
       {#if $clockIndicators.qibla && compassPermission === 'granted' && !compassEnabled}
         <div class="compass-enable" class:blurred={overlayOpen}>
-          Rotate device to calibrate...
+          {$t('clock.rotateToCalibrate')}
         </div>
       {:else if $clockIndicators.qibla && compassPermission === 'denied'}
         <div class="compass-enable" class:blurred={overlayOpen}>
-          Compass permission denied
+          {$t('clock.compassDenied')}
         </div>
       {/if}
 
@@ -1384,18 +1394,18 @@
             </div>
             {/key}
             <div class="current-arabic engrave-in">{prayerNames[$currentPrayer.current]?.ar || 'العشاء'}</div>
-            <div class="current-name" in:fly={{ y: 6, duration: 500, delay: 100, easing: cubicOut }} out:fly={{ y: -6, duration: 200 }}>{prayerNames[$currentPrayer.current]?.en || 'Isha'}</div>
+            <div class="current-name" in:fly={{ y: 6, duration: 500, delay: 100, easing: cubicOut }} out:fly={{ y: -6, duration: 200 }}>{prayerName($currentPrayer.current)}</div>
           {/key}
-          <div class="tap-hint" class:blurred={overlayOpen}>tap for full clock</div>
+          <div class="tap-hint" class:blurred={overlayOpen}>{$t('clock.tapForFullClock')}</div>
           {#key $currentPrayer.current}
             <div class="current-time" in:fly={{ y: 4, duration: 500, delay: 150, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>{formatTime($prayerTimes[$currentPrayer.current])}</div>
           {/key}
         </div>
 
         <div class="next-prayer" in:fly={{ y: 12, duration: 400, delay: 250 }}>
-          <span class="next-label">Next</span>
+          <span class="next-label">{$t('clock.next')}</span>
           {#key $todayCurrentPrayer.next}
-            <span class="next-name" in:fly={{ y: 4, duration: 500, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>{prayerNames[$todayCurrentPrayer.next]?.en}</span>
+            <span class="next-name" in:fly={{ y: 4, duration: 500, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>{prayerName($todayCurrentPrayer.next)}</span>
             <span class="next-time" in:fly={{ y: 4, duration: 500, delay: 50, easing: cubicOut }} out:fly={{ y: -4, duration: 200 }}>{formatTime($todayPrayerTimes[$todayCurrentPrayer.next])}</span>
           {/key}
         </div>
@@ -1421,7 +1431,7 @@
                 {@const isPast = thisIndex < activeIndex}
                 {@const isFuture = thisIndex > activeIndex}
                 <div class="time-row" class:active={isActive} class:past={isPast} class:future={isFuture}>
-                  <span class="time-name">{prayerNames[prayer]?.en}</span>
+                  <span class="time-name">{prayerName(prayer)}</span>
                   <span class="time-dots"></span>
                   <span class="time-value">{formatTime($prayerTimes[prayer])}</span>
                 </div>
@@ -1434,13 +1444,13 @@
 
     <!-- Dates at bottom (both views) -->
     <div class="dates-row" class:blurred={overlayOpen}>
-      <button class="date-nav date-nav-prev" type="button" aria-label="Previous day" on:click|stopPropagation={() => shiftDate(-1)}>
+      <button class="date-nav date-nav-prev" type="button" aria-label={$t('date.previousDay')} on:click|stopPropagation={() => shiftDate(-1)}>
         <svg class="date-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 5.5 L8.5 12 L15 18.5" />
         </svg>
       </button>
 
-      <button class="date-core" type="button" aria-label="Open calendar" on:click|stopPropagation={openCalendar}>
+      <button class="date-core" type="button" aria-label={$t('date.openCalendar')} on:click|stopPropagation={openCalendar}>
         <span class="date-offset">{getOffsetLabel($dateOffset)}</span>
         <div class="date-line">
           <span class="date-hijri">{hijriDate}</span>
@@ -1449,7 +1459,7 @@
         </div>
       </button>
 
-      <button class="date-nav date-nav-next" type="button" aria-label="Next day" on:click|stopPropagation={() => shiftDate(1)}>
+      <button class="date-nav date-nav-next" type="button" aria-label={$t('date.nextDay')} on:click|stopPropagation={() => shiftDate(1)}>
         <svg class="date-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 5.5 L15.5 12 L9 18.5" />
         </svg>
@@ -1460,7 +1470,7 @@
       <button
         class="calendar-backdrop"
         type="button"
-        aria-label="Close calendar"
+        aria-label={$t('date.closeCalendar')}
         on:click|stopPropagation={closeCalendarToHome}
         transition:fade={{ duration: 180 }}
       ></button>
@@ -1469,7 +1479,7 @@
         class="calendar-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Choose date"
+        aria-label={$t('date.chooseDate')}
       >
         <div
           class="calendar-sheet"
@@ -1478,7 +1488,7 @@
           transition:scale={{ duration: 260, start: 0.96, opacity: 0 }}
         >
           <div class="calendar-header">
-            <button class="calendar-month-nav" type="button" aria-label="Previous month" on:click|stopPropagation={() => shiftCalendarMonth(-1)}>
+            <button class="calendar-month-nav" type="button" aria-label={$t('date.previousMonth')} on:click|stopPropagation={() => shiftCalendarMonth(-1)}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M15 5.5 L8.5 12 L15 18.5" />
               </svg>
@@ -1493,7 +1503,7 @@
                 {/each}
               </div>
             </div>
-            <button class="calendar-month-nav" type="button" aria-label="Next month" on:click|stopPropagation={() => shiftCalendarMonth(1)}>
+            <button class="calendar-month-nav" type="button" aria-label={$t('date.nextMonth')} on:click|stopPropagation={() => shiftCalendarMonth(1)}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 5.5 L15.5 12 L9 18.5" />
               </svg>
@@ -1536,7 +1546,7 @@
           </div>
 
           <button class="calendar-today" type="button" on:click|stopPropagation={jumpCalendarToToday}>
-            Back To Today
+            {$t('date.backToToday')}
           </button>
         </div>
       </div>

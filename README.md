@@ -57,6 +57,7 @@ Push reminders are intentionally minimal. Netlify only stores the anonymous data
 {
   "deviceId": "eb560161-be9a-4c95-9f17-e18b922ef698",
   "notificationsEnabled": true,
+  "locale": "en",
   "subscription": {
     "endpoint": "https://fcm.googleapis.com/fcm/send/...",
     "keys": {
@@ -90,6 +91,8 @@ Push reminders are intentionally minimal. Netlify only stores the anonymous data
 ```
 
 That means the backend knows how to notify a device, but not where that person lives.
+
+`locale` is only the app language code (`en` or `tr`), kept so reminders arrive in the language the user chose.
 
 ## Highlights
 
@@ -126,6 +129,14 @@ Azan does not need live GPS to show Qibla.
 - The app never needs to continuously watch where the user is standing
 
 This is especially important for users who want directional guidance without turning their phone into a tracker.
+
+## Languages
+
+Azan is available in **English** and **Türkçe** (Turkish). The app follows the device language on first launch, and the language can be changed any time from Settings.
+
+Translations live in `src/lib/i18n/locales/`. To add a language, copy `en.js`, translate the values, and register it in `src/lib/i18n/translate.js` — `tests/i18n.test.js` checks that every key is present.
+
+Turkish documentation: [README.tr.md](README.tr.md) · Turkish translation by [@ayzekdiolar](https://x.com/ayzekdiolar)
 
 ## Screens and assets
 

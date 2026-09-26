@@ -105,9 +105,12 @@ export function buildNotificationSchedule({
   method,
   angles,
   types,
+  labels = notificationLabelMap,
   horizonDays = NOTIFICATION_HORIZON_DAYS,
   now = new Date()
 }) {
+  const labelFor = (type) => labels[type] || notificationLabelMap[type];
+
   if (!location?.latitude || !location?.longitude) return [];
 
   const cityToday = getMiddayDate(getCityTime(location.timezone));
@@ -130,19 +133,19 @@ export function buildNotificationSchedule({
     const nextDay = prayerDays[index + 1];
     const { times } = currentDay;
 
-    if (types.fajr) schedule.push(createScheduleEvent('fajr', 'Fajr', times.fajr));
-    if (types.dhuhr) schedule.push(createScheduleEvent('dhuhr', 'Dhuhr', times.dhuhr));
-    if (types.asr) schedule.push(createScheduleEvent('asr', 'Asr', times.asr));
-    if (types.maghrib) schedule.push(createScheduleEvent('maghrib', 'Maghrib', times.maghrib));
-    if (types.isha) schedule.push(createScheduleEvent('isha', 'Isha', times.isha));
-    if (types.sunrise) schedule.push(createScheduleEvent('sunrise', 'Sunrise', times.sunrise));
+    if (types.fajr) schedule.push(createScheduleEvent('fajr', labelFor('fajr'), times.fajr));
+    if (types.dhuhr) schedule.push(createScheduleEvent('dhuhr', labelFor('dhuhr'), times.dhuhr));
+    if (types.asr) schedule.push(createScheduleEvent('asr', labelFor('asr'), times.asr));
+    if (types.maghrib) schedule.push(createScheduleEvent('maghrib', labelFor('maghrib'), times.maghrib));
+    if (types.isha) schedule.push(createScheduleEvent('isha', labelFor('isha'), times.isha));
+    if (types.sunrise) schedule.push(createScheduleEvent('sunrise', labelFor('sunrise'), times.sunrise));
 
     if (types.lastThird) {
-      schedule.push(createNightEvent('lastThird', 'Last Third', times.maghrib, nextDay.times.fajr, 2 / 3));
+      schedule.push(createNightEvent('lastThird', labelFor('lastThird'), times.maghrib, nextDay.times.fajr, 2 / 3));
     }
 
     if (types.firstThirdEnd) {
-      schedule.push(createNightEvent('firstThirdEnd', '1st Third End', times.maghrib, nextDay.times.fajr, 1 / 3));
+      schedule.push(createNightEvent('firstThirdEnd', labelFor('firstThirdEnd'), times.maghrib, nextDay.times.fajr, 1 / 3));
     }
 
     if (types.newIslamicMonth) {
@@ -150,7 +153,7 @@ export function buildNotificationSchedule({
       const nextHijriKey = getHijriMonthKey(nextDay.day, timeZone);
 
       if (currentHijriKey !== nextHijriKey) {
-        schedule.push(createScheduleEvent('newIslamicMonth', 'New Islamic Month', times.maghrib));
+        schedule.push(createScheduleEvent('newIslamicMonth', labelFor('newIslamicMonth'), times.maghrib));
       }
     }
   }

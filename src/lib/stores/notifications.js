@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 import { calculationMethod, customAngles, location } from '$lib/stores/prayer.js';
+import { locale, translate } from '$lib/i18n/index.js';
 import {
   buildNotificationSchedule,
   defaultNotificationPreferences,
@@ -125,16 +126,25 @@ function buildSyncPayload(subscription) {
   const currentLocation = get(location);
   const method = get(calculationMethod);
   const angles = get(customAngles);
+  const currentLocale = get(locale);
+  const labels = Object.fromEntries(
+    notificationDefinitions.map((definition) => [
+      definition.id,
+      translate(currentLocale, `notifications.${definition.id}`, null, definition.label)
+    ])
+  );
 
   return {
     deviceId: getOrCreateDeviceId(),
     notificationsEnabled: preferences.enabled,
+    locale: currentLocale,
     types: preferences.types,
     schedule: buildNotificationSchedule({
       location: currentLocation,
       method,
       angles,
-      types: preferences.types
+      types: preferences.types,
+      labels
     }),
     subscription: subscription?.toJSON ? subscription.toJSON() : subscription
   };
@@ -314,7 +324,8 @@ export async function initializeNotifications() {
       }),
       location.subscribe(() => queueSync()),
       calculationMethod.subscribe(() => queueSync()),
-      customAngles.subscribe(() => queueSync())
+      customAngles.subscribe(() => queueSync()),
+      locale.subscribe(() => queueSync())
     ];
   };
 

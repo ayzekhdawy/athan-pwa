@@ -1,6 +1,7 @@
 import { getStore } from '@netlify/blobs';
 
 const STORE_NAME = 'azan-push-subscriptions';
+const SUPPORTED_LOCALES = ['en', 'tr'];
 
 function getPushStore() {
   return getStore(STORE_NAME);
@@ -33,6 +34,7 @@ export function normalizeDeviceRecord(payload) {
   return {
     deviceId: String(payload.deviceId),
     notificationsEnabled: Boolean(payload.notificationsEnabled),
+    locale: SUPPORTED_LOCALES.includes(payload.locale) ? payload.locale : 'en',
     subscription: payload.subscription,
     types: { ...(payload.types || {}) },
     schedule: sanitizeSchedule(payload.schedule),

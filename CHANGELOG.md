@@ -8,6 +8,21 @@ Versioning: `MAJOR.FEATURE.UPDATE.FIX`
 
 ---
 
+## v2.6.0.0 — 2026-09-26
+### Feature
+- Added Turkish language support with a lightweight i18n layer (`src/lib/i18n`) and a Language picker at the top of Settings; the app follows the device language on first launch and remembers the user's choice
+- Translated the full interface into Turkish: prayer names (İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı), Hijri months, countdowns, date navigation, calendar, clock indicators, settings, calculation methods, theme names and the city picker
+- Prayer times, dates and the calendar now follow the active language's formatting — Turkish uses a 24-hour clock and Monday-first weeks
+- Push reminders are sent in the language the device last synced with; the backend stores only the language code alongside the existing anonymous record
+- City search results from Nominatim are requested in the active language, and popular cities show localized names
+- Set `<html lang>` at runtime so Turkish text uppercases correctly (İ / ı)
+- Added `tests/i18n.test.js` to keep every locale in sync with the English keys
+
+### Fix
+- Corrected the Diyanet calculation method name to "Diyanet İşleri Başkanlığı, Türkiye"
+
+---
+
 ## v2.5.1.3 — 2026-03-18
 ### Fix
 - Softened the notification settings syncing label so reminder updates read more naturally in the UI

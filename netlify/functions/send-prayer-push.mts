@@ -17,11 +17,50 @@ function configureWebPush() {
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }
 
-function createNotificationPayload(entry: { type: string; label: string; timeUtc: string }) {
-  const title = entry.type === 'newIslamicMonth' ? 'New Islamic Month' : `${entry.label} reminder`;
-  const body = entry.type === 'newIslamicMonth'
-    ? 'Maghrib has entered with the start of a new Hijri month.'
-    : `It is time for ${entry.label}.`;
+type ScheduleEntry = { type: string; label: string; timeUtc: string };
+type NotificationTemplate = { title: (label: string) => string; body: (label: string) => string };
+
+// Push copy per app language; entry.label is already translated on the device
+const notificationCopy: Record<string, Record<string, NotificationTemplate>> = {
+  en: {
+    newIslamicMonth: {
+      title: () => 'New Islamic Month',
+      body: () => 'Maghrib has entered with the start of a new Hijri month.'
+    },
+    default: {
+      title: (label: string) => `${label} reminder`,
+      body: (label: string) => `It is time for ${label}.`
+    }
+  },
+  tr: {
+    newIslamicMonth: {
+      title: () => 'Yeni Hicri Ay',
+      body: () => 'Yeni Hicri ayın başlangıcıyla akşam vakti girdi.'
+    },
+    sunrise: {
+      title: () => 'Güneş vakti',
+      body: () => 'Güneş doğdu.'
+    },
+    lastThird: {
+      title: () => 'Gecenin son üçte biri',
+      body: () => 'Gecenin son üçte biri başladı; dua için en kıymetli vakit.'
+    },
+    firstThirdEnd: {
+      title: () => 'Gecenin ilk üçte biri',
+      body: () => 'Gecenin ilk üçte biri sona erdi.'
+    },
+    default: {
+      title: (label: string) => `${label} vakti`,
+      body: (label: string) => `${label} vakti girdi.`
+    }
+  }
+};
+
+function createNotificationPayload(entry: ScheduleEntry, locale = 'en') {
+  const copy = notificationCopy[locale] || notificationCopy.en;
+  const template = copy[entry.type] || copy.default;
+  const title = template.title(entry.label);
+  const body = template.body(entry.label);
 
   return JSON.stringify({
     title,
@@ -64,7 +103,7 @@ export default async () => {
 
     for (const entry of dueEntries) {
       try {
-        await webpush.sendNotification(record.subscription, createNotificationPayload(entry));
+        await webpush.sendNotification(record.subscription, createNotificationPayload(entry, record.locale));
         entry.sent = true;
         entry.sentAt = new Date().toISOString();
         sentCount += 1;
