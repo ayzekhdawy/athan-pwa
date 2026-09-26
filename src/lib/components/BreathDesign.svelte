@@ -1177,6 +1177,24 @@
         {/key}
       </div>
 
+      <!-- Verse of the day, in the space above the clock -->
+      {#if verse}
+        {#key verse.reference}
+          <button
+            class="clock-verse"
+            class:blurred={overlayOpen}
+            type="button"
+            title={$t('verse.next')}
+            on:click|stopPropagation={showNextVerse}
+            in:fade={{ duration: 500 }}
+          >
+            <span class="verse-arabic" lang="ar" dir="rtl">{verse.arabic}</span>
+            <span class="verse-translation">{verse.translation}</span>
+            <span class="verse-reference">{verseSurahName} {verse.surah}:{verse.ayah}</span>
+          </button>
+        {/key}
+      {/if}
+
       <!-- Special times info below clock - only shown when active -->
       {#if (isInDuha && $clockIndicators.duha) || (isInQaylula && $clockIndicators.qaylula) || (isInFridayDua && $clockIndicators.fridayDua) || (isInFirstThird && $clockIndicators.firstThirdEnd) || (isInLastThird && $clockIndicators.lastThird)}
         <div class="clock-indicators" class:blurred={overlayOpen}>
@@ -1458,22 +1476,6 @@
             </div>
           {/key}
         </div>
-
-        {#if verse}
-          {#key verse.reference}
-            <button
-              class="verse"
-              type="button"
-              title={$t('verse.next')}
-              on:click|stopPropagation={showNextVerse}
-              in:fade={{ duration: 500 }}
-            >
-              <span class="verse-arabic" lang="ar" dir="rtl">{verse.arabic}</span>
-              <span class="verse-translation">{verse.translation}</span>
-              <span class="verse-reference">{verseSurahName} {verse.surah}:{verse.ayah}</span>
-            </button>
-          {/key}
-        {/if}
       </div>
     {/if}
 
@@ -2197,22 +2199,26 @@
     font-weight: 400;
   }
 
-  /* Verse of the day */
-  .verse {
+  /* Verse of the day: between the header and the clock's top label */
+  .clock-verse {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 4.25rem);
+    bottom: calc(50% + min(35vw, 24vh) * 1.3 + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, 85vw);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
-    width: 100%;
-    max-width: min(320px, 85vw);
-    /* Sits in the spare space the prayer list stage reserves below its last row */
-    margin: -2.5rem auto 0;
+    justify-content: center;
+    gap: 0.2rem;
     padding: 0;
     background: none;
     border: none;
     color: inherit;
     text-align: center;
     cursor: pointer;
+    transition: filter 0.3s ease-out;
   }
 
   .verse-arabic,
@@ -2225,22 +2231,22 @@
 
   .verse-arabic {
     font-family: 'Amiri', serif;
-    font-size: 1.1rem;
-    line-height: 1.6;
+    font-size: 1rem;
+    line-height: 1.5;
     color: rgba(var(--theme-accent-rgb), 0.7);
   }
 
   .verse-translation {
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
-    font-size: 0.95rem;
-    line-height: 1.3;
+    font-size: 0.9rem;
+    line-height: 1.25;
     color: rgba(var(--theme-text-rgb), 0.5);
   }
 
   .verse-reference {
     font-family: 'Outfit', sans-serif;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(var(--theme-text-rgb), 0.28);
@@ -2784,9 +2790,9 @@
   }
 
   /* ===== RESPONSIVE ===== */
-  /* The verse only appears when the screen has room below the prayer list */
-  @media (max-height: 839px) {
-    .verse {
+  /* Too little room above the clock on very short screens */
+  @media (max-height: 619px) {
+    .clock-verse {
       display: none;
     }
   }

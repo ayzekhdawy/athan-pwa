@@ -10,9 +10,9 @@ Versioning: `MAJOR.FEATURE.UPDATE.FIX`
 
 ## v2.7.0.0 — 2026-09-27
 ### Feature
-- Added a verse of the day below the prayer list: the Arabic text with a translation in the app language (English: Sahih International, Turkish: Süleyman Ateş); tap it for the next verse
+- Added a verse of the day in the empty space above the full clock: the Arabic text with a translation in the app language (English: Sahih International, Turkish: Süleyman Ateş); tap it for the next verse
 - Connected the previously unused `verses.js` store: the verse is fetched from alquran.cloud by reference only, cached on the device, and falls back to English if a translation is unavailable
-- The verse only appears on screens tall enough to show it without crowding the prayer times
+- The default prayer-list screen is unchanged; the verse is hidden only on very short screens (under 620px)
 
 ### Update
 - Removed 2:152 and 20:14 from the curated list so every verse stays within the file's "one line" rule

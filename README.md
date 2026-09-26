@@ -102,7 +102,7 @@ That means the backend knows how to notify a device, but not where that person l
 - Countdown to the next prayer
 - Qibla direction from the selected city with optional compass orientation permission
 - Installable PWA with offline support
-- A short verse of the day under the prayer times (Arabic with a translation in the app language; tap for another)
+- A short verse of the day above the full clock (Arabic with a translation in the app language; tap for another)
 - Anonymous push reminders for:
   - the five daily prayers
   - sunrise

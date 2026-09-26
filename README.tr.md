@@ -61,7 +61,7 @@ Yani sunucu bir cihaza nasıl bildirim göndereceğini bilir, ama o kişinin ner
 - Sıradaki vakte geri sayım
 - Seçilen şehre göre kıble yönü (isteğe bağlı pusula izniyle)
 - Çevrimdışı destekli, ana ekrana eklenebilir PWA
-- Vakitlerin altında kısa bir günün ayeti (Arapçası ve uygulama dilinde meali; dokununca başka bir ayet gelir)
+- Tam saat görünümünde, saatin üstünde kısa bir günün ayeti (Arapçası ve uygulama dilinde meali; dokununca başka bir ayet gelir)
 - Türkçe ve İngilizce arayüz, 24 saat biçimi ve Pazartesi ile başlayan takvim
 - Varsayılan olarak Müslüman Dünya Birliği yöntemi; toplam 12 hesaplama yöntemi ve özel açı ayarı
 - Şunlar için anonim hatırlatmalar:
